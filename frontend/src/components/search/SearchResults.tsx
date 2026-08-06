@@ -76,6 +76,18 @@ function SearchResults({ labs, hasFilters = false }: SearchResultsProps) {
     [aiRecommendation, filteredLabs],
   );
 
+  async function readJsonResponse<T>(response: Response): Promise<T & { error?: string }> {
+    const text = await response.text();
+    if (!text) return {} as T & { error?: string };
+    try {
+      return JSON.parse(text) as T & { error?: string };
+    } catch {
+      throw new Error(response.ok
+        ? "서버 응답을 처리하지 못했습니다."
+        : "서버 연결이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.");
+    }
+  }
+
   async function searchWithAi(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmedQuery = query.trim();
@@ -91,7 +103,7 @@ function SearchResults({ labs, hasFilters = false }: SearchResultsProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query: trimmedQuery, candidates: recommendationCandidates }),
       });
-      const data = (await response.json()) as Partial<InstituteRecommendation> & { error?: string };
+      const data = await readJsonResponse<Partial<InstituteRecommendation>>(response);
       if (!response.ok || !data.text || !data.institutions?.length || !data.source) {
         throw new Error(data.error || "AI 추천을 불러오지 못했습니다.");
       }
@@ -119,7 +131,7 @@ function SearchResults({ labs, hasFilters = false }: SearchResultsProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query: trimmedQuery }),
       });
-      const data = (await response.json()) as Partial<PaperRecommendation> & { error?: string };
+      const data = await readJsonResponse<Partial<PaperRecommendation>>(response);
       if (!response.ok || !data.papers?.length || !data.source || !data.query) {
         throw new Error(data.error || "관련 논문을 불러오지 못했습니다.");
       }

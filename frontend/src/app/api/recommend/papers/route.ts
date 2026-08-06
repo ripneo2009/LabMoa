@@ -24,6 +24,17 @@ interface OpenAlexResponse {
 type GeminiSummary = { id: string; summary: string };
 interface GeminiSummaries { summaries?: GeminiSummary[] }
 
+const GEMINI_TIMEOUT_MS = 3_500;
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      setTimeout(() => reject(new Error("Gemini summary timed out")), timeoutMs);
+    }),
+  ]);
+}
+
 function reconstructAbstract(index?: Record<string, number[]>): string | null {
   if (!index) return null;
   const words: string[] = [];
@@ -73,11 +84,11 @@ export async function POST(request: Request) {
     if (apiKey) {
       try {
         const ai = new GoogleGenAI({ apiKey });
-        const result = await ai.models.generateContent({
+        const result = await withTimeout(ai.models.generateContent({
           model: process.env.GEMINI_MODEL ?? "gemini-3.5-flash",
           contents: `다음은 OpenAlex에서 검색된 실제 논문의 제목과 초록입니다. 각 논문의 핵심 연구 목적, 방법, 결과를 초록에 있는 내용만으로 한국어 2~3문장으로 요약하세요. 정보가 없으면 추측하지 마세요. JSON만 반환하세요.\n\n${JSON.stringify(works.map((work) => ({ id: work.id, title: work.title, abstract: abstracts.get(work.id) })))}`,
           config: { responseMimeType: "application/json" },
-        });
+        }), GEMINI_TIMEOUT_MS);
         const parsed = JSON.parse(result.text ?? "{}") as GeminiSummaries | GeminiSummary[];
         const items = Array.isArray(parsed) ? parsed : parsed.summaries ?? [];
         for (const item of items) {
