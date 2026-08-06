@@ -58,8 +58,13 @@ function AiRecommendationList({
                 <p className="mb-3 text-sm leading-relaxed text-muted-foreground">{institute.description}</p>
                 <div className="mb-2 flex items-center gap-2 text-xs font-medium text-foreground">
                   <FlaskConical className="size-4 text-primary" aria-hidden="true" />
-                  구비 실험 장비
+                  {institute.equipmentSource === "ai-estimate" ? "AI 예상 연구 장비" : "구비 실험 장비"}
                 </div>
+                {institute.equipmentSource === "ai-estimate" && (
+                  <p className="mb-2 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">
+                    연구 주제로 추정한 장비입니다. 실제 보유 여부는 예약 전에 연구소에 확인하세요.
+                  </p>
+                )}
                 <div className="flex flex-wrap gap-1.5">
                   {institute.equipment?.length ? (
                     institute.equipment.map((item) => (

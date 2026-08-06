@@ -21,6 +21,7 @@ interface RecommendRequest {
 interface GeminiRecommendation {
   ids?: string[];
   text?: string;
+  equipment?: Record<string, string[]>;
 }
 
 export async function POST(request: Request) {
@@ -59,7 +60,8 @@ export async function POST(request: Request) {
 User search criteria: ${query || "No criteria provided"}
 
 Select exactly three of the candidate institutions that best match the search criteria.
-Return JSON only in this shape: {"ids":["candidate-id"],"text":"A concise Korean explanation"}.
+For every selected institution, infer 4 to 6 pieces of equipment that would commonly be needed for the user's research. These are estimates, not verified inventory.
+Return JSON only in this shape: {"ids":["candidate-id"],"text":"A concise Korean explanation","equipment":{"candidate-id":["estimated equipment"]}}.
 Use only IDs and facts present in the candidate list. Do not invent institutions.
 
 ${JSON.stringify(candidateInstitutions.map(({ id, name, description, equipment }) => ({ id, name, description, equipment })), null, 2)}`;
@@ -73,7 +75,16 @@ ${JSON.stringify(candidateInstitutions.map(({ id, name, description, equipment }
 
     const parsed = JSON.parse(result.text ?? "{}") as GeminiRecommendation;
     const selectedIds = new Set(parsed.ids?.slice(0, 3));
-    const institutions = candidateInstitutions.filter(({ id }) => selectedIds.has(id));
+    const institutions = candidateInstitutions
+      .filter(({ id }) => selectedIds.has(id))
+      .map((institution) => {
+        const estimatedEquipment = parsed.equipment?.[institution.id]
+          ?.filter((item) => typeof item === "string" && item.trim())
+          .slice(0, 6);
+        return estimatedEquipment?.length
+          ? { ...institution, equipment: estimatedEquipment, equipmentSource: "ai-estimate" as const }
+          : institution;
+      });
     const text = parsed.text?.trim();
     if (!text || institutions.length === 0) {
       throw new Error("Gemini returned an empty response");

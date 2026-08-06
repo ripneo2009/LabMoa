@@ -4,6 +4,7 @@ export interface RecommendedInstitute {
   description: string;
   mapQuery: string;
   equipment?: string[];
+  equipmentSource?: "verified" | "ai-estimate";
   address?: string;
   lat?: number;
   lng?: number;

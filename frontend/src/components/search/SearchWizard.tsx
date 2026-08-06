@@ -4,12 +4,12 @@
 // 값이 바뀔 때마다 URL 쿼리스트링에 반영해 결과 목록이 실시간으로 갱신되게 한다.
 import * as React from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { LoaderCircle, Sparkles } from "lucide-react";
+import { BookOpen, LoaderCircle, Sparkles } from "lucide-react";
 
 import { Button, Card } from "@/components/ui";
 import { useSearchFilters } from "@/hooks/useSearchFilters";
 import { DURATION, EASE } from "@/lib/constants/motion";
-import type { InstituteRecommendation, RecommendedInstitute } from "@/types/recommendation";
+import type { InstituteRecommendation, PaperRecommendation, RecommendedInstitute } from "@/types/recommendation";
 import { StepRegion } from "./StepRegion";
 import { StepFields } from "./StepFields";
 import { StepExperiment } from "./StepExperiment";
@@ -23,6 +23,7 @@ export interface SearchWizardProps {
   onRecommendationStart?: () => void;
   /** AI 추천이 완료되면 추천문을 전달한다. */
   onComplete?: (recommendation: InstituteRecommendation) => void;
+  onPaperComplete?: (recommendation: PaperRecommendation) => void;
 }
 
 interface RecommendResponse {
@@ -36,16 +37,27 @@ function SearchWizard({
   candidates = [],
   onRecommendationStart,
   onComplete,
+  onPaperComplete,
 }: SearchWizardProps = {}) {
   const { filters, update } = useSearchFilters();
   const [step, setStep] = React.useState(0);
   const [direction, setDirection] = React.useState(1);
   const [isRecommending, setIsRecommending] = React.useState(false);
+  const [isFindingPapers, setIsFindingPapers] = React.useState(false);
   const [recommendationError, setRecommendationError] = React.useState<string | null>(null);
 
   function goTo(nextStep: number) {
     setDirection(nextStep > step ? 1 : -1);
     setStep(Math.max(0, Math.min(TOTAL_STEPS - 1, nextStep)));
+  }
+
+  function buildQuery() {
+    return [
+      filters.region,
+      filters.fields.join(", "),
+      filters.equipment.join(", "),
+      filters.experimentText,
+    ].filter(Boolean).join(" / ");
   }
 
   async function requestRecommendation() {
@@ -54,12 +66,7 @@ function SearchWizard({
     onRecommendationStart?.();
 
     try {
-      const query = [
-        filters.region,
-        filters.fields.join(", "),
-        filters.equipment.join(", "),
-        filters.experimentText,
-      ].filter(Boolean).join(" / ");
+      const query = buildQuery();
       const response = await fetch("/api/recommend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -82,6 +89,37 @@ function SearchWizard({
       );
     } finally {
       setIsRecommending(false);
+    }
+  }
+
+
+  async function requestPapers() {
+    const query = buildQuery();
+    if (!query || isFindingPapers) return;
+    setIsFindingPapers(true);
+    setRecommendationError(null);
+    onRecommendationStart?.();
+    try {
+      const response = await fetch("/api/recommend/papers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+      });
+      const text = await response.text();
+      let data: Partial<PaperRecommendation> & { error?: string };
+      try {
+        data = JSON.parse(text) as Partial<PaperRecommendation> & { error?: string };
+      } catch {
+        throw new Error("논문 검색 서버가 지연되고 있습니다. 잠시 후 다시 시도해 주세요.");
+      }
+      if (!response.ok || !data.query || !data.papers?.length || !data.source) {
+        throw new Error(data.error || "관련 논문을 불러오지 못했습니다.");
+      }
+      onPaperComplete?.(data as PaperRecommendation);
+    } catch (error) {
+      setRecommendationError(error instanceof Error ? error.message : "논문 검색에 실패했습니다.");
+    } finally {
+      setIsFindingPapers(false);
     }
   }
 
@@ -124,7 +162,7 @@ function SearchWizard({
           </AnimatePresence>
         </div>
 
-        <div className="flex shrink-0 items-end justify-between gap-3">
+        <div className="flex shrink-0 items-end justify-between gap-3 border-t border-border pt-3">
           <Button
             type="button"
             variant="outline"
@@ -138,18 +176,16 @@ function SearchWizard({
               다음
             </Button>
           ) : (
-            <Button
-              type="button"
-              onClick={requestRecommendation}
-              disabled={isRecommending}
-            >
-              {isRecommending ? (
-                <LoaderCircle className="animate-spin" aria-hidden="true" />
-              ) : (
-                <Sparkles aria-hidden="true" />
-              )}
-              {isRecommending ? "AI가 추천 중..." : "AI 추천 받기"}
-            </Button>
+            <div className="grid flex-1 grid-cols-2 gap-2">
+              <Button type="button" onClick={requestRecommendation} disabled={isRecommending || isFindingPapers}>
+                {isRecommending ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : <Sparkles aria-hidden="true" />}
+                {isRecommending ? "추천 중..." : "AI 추천 보기"}
+              </Button>
+              <Button type="button" variant="outline" onClick={requestPapers} disabled={isRecommending || isFindingPapers}>
+                {isFindingPapers ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : <BookOpen aria-hidden="true" />}
+                {isFindingPapers ? "검색 중..." : "관련 논문 보기"}
+              </Button>
+            </div>
           )}
         </div>
         {recommendationError && (

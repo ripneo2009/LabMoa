@@ -241,10 +241,18 @@ function SearchResults({ labs, hasFilters = false }: SearchResultsProps) {
             >
               <SearchWizard
                 candidates={recommendationCandidates}
-                onRecommendationStart={() => setAiRecommendation(null)}
+                onRecommendationStart={() => {
+                  setAiRecommendation(null);
+                  setPaperRecommendation(null);
+                }}
                 onComplete={(recommendation) => {
                   setAiRecommendation(recommendation);
                   setSelectedRecommendationId(recommendation.institutions[0]?.id ?? null);
+                  setWizardOpen(false);
+                }}
+                onPaperComplete={(recommendation) => {
+                  setPaperRecommendation(recommendation);
+                  setAiRecommendation(null);
                   setWizardOpen(false);
                 }}
               />
