@@ -13,7 +13,8 @@ import { LoaderCircle, Search, Sparkles, SlidersHorizontal, X } from "lucide-rea
 import { Button, Card, Input } from "@/components/ui";
 import { DURATION, EASE } from "@/lib/constants/motion";
 import type { LabSearchResult } from "@/types/lab";
-import type { InstituteRecommendation } from "@/types/recommendation";
+import type { InstituteRecommendation, RecommendedInstitute } from "@/types/recommendation";
+import { AiRecommendationList } from "./AiRecommendationList";
 import { LabResultList } from "./LabResultList";
 import { LabMap } from "./LabMap";
 import { SearchWizard } from "./SearchWizard";
@@ -32,6 +33,21 @@ function SearchResults({ labs, hasFilters = false }: SearchResultsProps) {
   const [searchError, setSearchError] = React.useState<string | null>(null);
   const [wizardOpen, setWizardOpen] = React.useState(!hasFilters);
   const [aiRecommendation, setAiRecommendation] = React.useState<InstituteRecommendation | null>(null);
+  const [selectedRecommendationId, setSelectedRecommendationId] = React.useState<string | null>(null);
+
+  const recommendationCandidates = React.useMemo<RecommendedInstitute[]>(
+    () => labs.map((lab) => ({
+      id: lab.id,
+      name: lab.name,
+      description: lab.description,
+      mapQuery: `${lab.name} ${lab.address}`,
+      equipment: lab.equipment,
+      address: lab.address,
+      lat: lab.lat,
+      lng: lab.lng,
+    })),
+    [labs],
+  );
 
   const filteredLabs = React.useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -50,6 +66,8 @@ function SearchResults({ labs, hasFilters = false }: SearchResultsProps) {
           id: `institute-${institute.id}`,
           name: institute.name,
           mapQuery: institute.mapQuery,
+          lat: institute.lat,
+          lng: institute.lng,
         }))
       : filteredLabs,
     [aiRecommendation, filteredLabs],
@@ -67,13 +85,14 @@ function SearchResults({ labs, hasFilters = false }: SearchResultsProps) {
       const response = await fetch("/api/recommend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: trimmedQuery }),
+        body: JSON.stringify({ query: trimmedQuery, candidates: recommendationCandidates }),
       });
       const data = (await response.json()) as Partial<InstituteRecommendation> & { error?: string };
       if (!response.ok || !data.text || !data.institutions?.length || !data.source) {
         throw new Error(data.error || "AI 추천을 불러오지 못했습니다.");
       }
       setAiRecommendation(data as InstituteRecommendation);
+      setSelectedRecommendationId(data.institutions[0]?.id ?? null);
       setWizardOpen(false);
     } catch (error) {
       setSearchError(error instanceof Error ? error.message : "AI 검색에 실패했습니다.");
@@ -87,7 +106,12 @@ function SearchResults({ labs, hasFilters = false }: SearchResultsProps) {
       <LabMap
         labs={mapLabs}
         hoveredLabId={hoveredLabId}
-        onSelectLab={setSelectedLabId}
+        onSelectLab={(labId) => {
+          setSelectedLabId(labId);
+          if (labId.startsWith("institute-")) {
+            setSelectedRecommendationId(labId.replace("institute-", ""));
+          }
+        }}
       />
 
       {/* Kakao HYBRID 지도가 내부적으로 z-index를 쓰는 SVG/컨트롤 레이어를 만들기 때문에
@@ -149,9 +173,11 @@ function SearchResults({ labs, hasFilters = false }: SearchResultsProps) {
               className="pointer-events-auto"
             >
               <SearchWizard
+                candidates={recommendationCandidates}
                 onRecommendationStart={() => setAiRecommendation(null)}
                 onComplete={(recommendation) => {
                   setAiRecommendation(recommendation);
+                  setSelectedRecommendationId(recommendation.institutions[0]?.id ?? null);
                   setWizardOpen(false);
                 }}
               />
@@ -161,7 +187,15 @@ function SearchResults({ labs, hasFilters = false }: SearchResultsProps) {
 
         <div className="pointer-events-auto min-h-0 flex-1 overflow-y-auto rounded-xl border border-border bg-card/95 p-3 backdrop-blur">
           {aiRecommendation && (
-            <Card className="relative mb-4 gap-2 border-primary/30 bg-primary/5 p-4 pr-10" aria-live="polite">
+            <AiRecommendationList
+              recommendation={aiRecommendation}
+              selectedId={selectedRecommendationId}
+              onSelect={setSelectedRecommendationId}
+              onClose={() => setAiRecommendation(null)}
+            />
+          )}
+          {aiRecommendation && (
+            <Card className="hidden" aria-hidden="true">
               <div className="flex items-center gap-2 font-medium text-primary">
                 <Sparkles className="size-4" aria-hidden="true" />
                 {aiRecommendation.source === "gemini" ? "AI 추천" : "연구기관 추천"}

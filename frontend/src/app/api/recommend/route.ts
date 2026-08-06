@@ -2,6 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 
 import { researchInstitutes } from "@/data/research-institutes";
+import type { RecommendedInstitute } from "@/types/recommendation";
 
 function shuffle<T>(items: T[]): T[] {
   const shuffled = [...items];
@@ -14,6 +15,7 @@ function shuffle<T>(items: T[]): T[] {
 
 interface RecommendRequest {
   query?: string;
+  candidates?: RecommendedInstitute[];
 }
 
 interface GeminiRecommendation {
@@ -25,12 +27,15 @@ export async function POST(request: Request) {
   const apiKey = process.env.GEMINI_API_KEY;
   const body = (await request.json().catch(() => ({}))) as RecommendRequest;
   const query = body.query?.trim() ?? "";
-  const fallbackInstitutions = shuffle(researchInstitutes).slice(0, 3);
+  const candidateInstitutions = body.candidates?.length
+    ? body.candidates.slice(0, 100)
+    : researchInstitutes;
+  const fallbackInstitutions = shuffle(candidateInstitutions).slice(0, 3);
   const fallbackText = fallbackInstitutions
     .map(({ name, description }) => `${name} — ${description}`)
     .join("\n");
 
-  if (researchInstitutes.length === 0) {
+  if (candidateInstitutions.length === 0) {
     return NextResponse.json(
       { error: "현재 등록된 연구기관이 없습니다." },
       { status: 404 },
@@ -57,7 +62,7 @@ Select exactly three of the candidate institutions that best match the search cr
 Return JSON only in this shape: {"ids":["candidate-id"],"text":"A concise Korean explanation"}.
 Use only IDs and facts present in the candidate list. Do not invent institutions.
 
-${JSON.stringify(researchInstitutes.map(({ id, name, description }) => ({ id, name, description })), null, 2)}`;
+${JSON.stringify(candidateInstitutions.map(({ id, name, description, equipment }) => ({ id, name, description, equipment })), null, 2)}`;
 
     const ai = new GoogleGenAI({ apiKey });
     const result = await ai.models.generateContent({
@@ -68,7 +73,7 @@ ${JSON.stringify(researchInstitutes.map(({ id, name, description }) => ({ id, na
 
     const parsed = JSON.parse(result.text ?? "{}") as GeminiRecommendation;
     const selectedIds = new Set(parsed.ids?.slice(0, 3));
-    const institutions = researchInstitutes.filter(({ id }) => selectedIds.has(id));
+    const institutions = candidateInstitutions.filter(({ id }) => selectedIds.has(id));
     const text = parsed.text?.trim();
     if (!text || institutions.length === 0) {
       throw new Error("Gemini returned an empty response");

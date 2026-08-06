@@ -18,6 +18,7 @@ import { WizardProgress } from "./WizardProgress";
 const TOTAL_STEPS = 3;
 
 export interface SearchWizardProps {
+  candidates?: RecommendedInstitute[];
   /** AI 추천이 시작될 때 이전 추천을 초기화하는 데 쓴다. */
   onRecommendationStart?: () => void;
   /** AI 추천이 완료되면 추천문을 전달한다. */
@@ -32,6 +33,7 @@ interface RecommendResponse {
 }
 
 function SearchWizard({
+  candidates = [],
   onRecommendationStart,
   onComplete,
 }: SearchWizardProps = {}) {
@@ -61,7 +63,7 @@ function SearchWizard({
       const response = await fetch("/api/recommend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ query, candidates }),
       });
       const data = (await response.json()) as RecommendResponse;
 
