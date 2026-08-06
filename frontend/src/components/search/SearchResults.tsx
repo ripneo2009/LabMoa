@@ -8,13 +8,14 @@
 // 태그 기준으로 즉시 한 번 더 필터링하는 클라이언트 사이드 텍스트 검색이다.
 import * as React from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { LoaderCircle, Search, Sparkles, SlidersHorizontal, X } from "lucide-react";
+import { BookOpen, LoaderCircle, Search, Sparkles, SlidersHorizontal, X } from "lucide-react";
 
 import { Button, Card, Input } from "@/components/ui";
 import { DURATION, EASE } from "@/lib/constants/motion";
 import type { LabSearchResult } from "@/types/lab";
-import type { InstituteRecommendation, RecommendedInstitute } from "@/types/recommendation";
+import type { InstituteRecommendation, PaperRecommendation, RecommendedInstitute } from "@/types/recommendation";
 import { AiRecommendationList } from "./AiRecommendationList";
+import { AiPaperRecommendationList } from "./AiPaperRecommendationList";
 import { LabResultList } from "./LabResultList";
 import { LabMap } from "./LabMap";
 import { SearchWizard } from "./SearchWizard";
@@ -33,6 +34,8 @@ function SearchResults({ labs, hasFilters = false }: SearchResultsProps) {
   const [searchError, setSearchError] = React.useState<string | null>(null);
   const [wizardOpen, setWizardOpen] = React.useState(!hasFilters);
   const [aiRecommendation, setAiRecommendation] = React.useState<InstituteRecommendation | null>(null);
+  const [paperRecommendation, setPaperRecommendation] = React.useState<PaperRecommendation | null>(null);
+  const [isPaperSearching, setIsPaperSearching] = React.useState(false);
   const [selectedRecommendationId, setSelectedRecommendationId] = React.useState<string | null>(null);
 
   const recommendationCandidates = React.useMemo<RecommendedInstitute[]>(
@@ -81,6 +84,7 @@ function SearchResults({ labs, hasFilters = false }: SearchResultsProps) {
     setIsSearching(true);
     setSearchError(null);
     setAiRecommendation(null);
+    setPaperRecommendation(null);
     try {
       const response = await fetch("/api/recommend", {
         method: "POST",
@@ -101,6 +105,33 @@ function SearchResults({ labs, hasFilters = false }: SearchResultsProps) {
     }
   }
 
+  async function searchPapers() {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery || isPaperSearching) return;
+
+    setIsPaperSearching(true);
+    setSearchError(null);
+    setPaperRecommendation(null);
+    setAiRecommendation(null);
+    try {
+      const response = await fetch("/api/recommend/papers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: trimmedQuery }),
+      });
+      const data = (await response.json()) as Partial<PaperRecommendation> & { error?: string };
+      if (!response.ok || !data.papers?.length || !data.source || !data.query) {
+        throw new Error(data.error || "관련 논문을 불러오지 못했습니다.");
+      }
+      setPaperRecommendation(data as PaperRecommendation);
+      setWizardOpen(false);
+    } catch (error) {
+      setSearchError(error instanceof Error ? error.message : "논문 검색에 실패했습니다.");
+    } finally {
+      setIsPaperSearching(false);
+    }
+  }
+
   return (
     <div className="relative h-[calc(100svh-4rem)] w-full overflow-hidden">
       <LabMap
@@ -118,7 +149,7 @@ function SearchResults({ labs, hasFilters = false }: SearchResultsProps) {
           기본 스태킹만으로는 이 패널이 뒤로 밀려 클릭이 지도로 새어나갈 수 있다.
           z-index를 명시해 항상 지도 위에 오도록 고정한다. */}
       <div className="pointer-events-none absolute inset-0 z-10 flex flex-col gap-3 p-4 sm:max-w-sm sm:p-6">
-        <form className="pointer-events-auto flex items-center gap-2" onSubmit={searchWithAi}>
+        <form id="lab-ai-search" className="pointer-events-auto flex items-center gap-2" onSubmit={searchWithAi}>
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -156,6 +187,30 @@ function SearchResults({ labs, hasFilters = false }: SearchResultsProps) {
           </Button>
         </form>
 
+        <div className="pointer-events-auto flex gap-2">
+          <Button
+            type="submit"
+            form="lab-ai-search"
+            size="sm"
+            variant={paperRecommendation ? "outline" : "default"}
+            disabled={!query.trim() || isSearching}
+            className="flex-1"
+          >
+            <Search className="size-4" aria-hidden="true" /> 연구소 찾기
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={paperRecommendation ? "default" : "outline"}
+            disabled={!query.trim() || isPaperSearching}
+            onClick={searchPapers}
+            className="flex-1 backdrop-blur"
+          >
+            {isPaperSearching ? <LoaderCircle className="size-4 animate-spin" /> : <BookOpen className="size-4" aria-hidden="true" />}
+            논문·연구결과
+          </Button>
+        </div>
+
         {searchError && (
           <p role="alert" className="pointer-events-auto rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
             {searchError}
@@ -186,6 +241,12 @@ function SearchResults({ labs, hasFilters = false }: SearchResultsProps) {
         </AnimatePresence>
 
         <div className="pointer-events-auto min-h-0 flex-1 overflow-y-auto rounded-xl border border-border bg-card/95 p-3 backdrop-blur">
+          {paperRecommendation && (
+            <AiPaperRecommendationList
+              recommendation={paperRecommendation}
+              onClose={() => setPaperRecommendation(null)}
+            />
+          )}
           {aiRecommendation && (
             <AiRecommendationList
               recommendation={aiRecommendation}
