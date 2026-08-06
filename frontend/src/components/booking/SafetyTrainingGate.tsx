@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { CheckCircle2, LockKeyhole, PlayCircle } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 import { Button, Card } from "@/components/ui";
 
@@ -56,12 +55,11 @@ function loadYouTubeApi(): Promise<YouTubeNamespace> {
 }
 
 interface SafetyTrainingGateProps {
-  labId: string;
   labName: string;
+  onContinue: () => void;
 }
 
-function SafetyTrainingGate({ labId, labName }: SafetyTrainingGateProps) {
-  const router = useRouter();
+function SafetyTrainingGate({ labName, onContinue }: SafetyTrainingGateProps) {
   const playerHostRef = React.useRef<HTMLDivElement>(null);
   const playerRef = React.useRef<YouTubePlayer | null>(null);
   const watchedSecondsRef = React.useRef(new Set<number>());
@@ -172,7 +170,7 @@ function SafetyTrainingGate({ labId, labName }: SafetyTrainingGateProps) {
         type="button"
         size="lg"
         disabled={!ready || !completed}
-        onClick={() => router.push(`/proposals/new?labId=${labId}`)}
+        onClick={onContinue}
       >
         {!completed && <LockKeyhole aria-hidden="true" />}
         {completed ? "예약 절차 계속하기" : "안전교육 시청 필요"}
