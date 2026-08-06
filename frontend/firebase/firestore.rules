@@ -1,0 +1,12 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // This application uses custom HTTP-only cookie authentication and accesses
+    // Firestore only through the server-side Admin SDK repositories.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+

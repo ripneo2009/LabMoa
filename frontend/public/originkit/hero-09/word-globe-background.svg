@@ -1,0 +1,12 @@
+<svg width="1184" height="758" viewBox="0 0 1184 758" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<rect opacity="0.1" width="1184" height="758" fill="url(#pattern0_520_248)"/>
+<defs>
+<pattern id="pattern0_520_248" patternUnits="userSpaceOnUse" patternTransform="matrix(752.918 0 0 30.1167 -0.183818 -0.317955)" preserveAspectRatio="none" viewBox="-0.289062 -0.5 1184 47.36" width="1" height="1">
+<use xlink:href="#pattern0_520_248_inner" transform="translate(-1184 -47.36)"/>
+<use xlink:href="#pattern0_520_248_inner" transform="translate(0 -47.36)"/>
+<use xlink:href="#pattern0_520_248_inner" transform="translate(-1184 0)"/>
+<g id="pattern0_520_248_inner">
+<path d="M0 0.00109617C0 0.00109617 66.7642 47.0972 117.653 47.3589C169.201 47.6239 185.625 -0.263949 237.174 0.00109617C288.062 0.262751 303.938 47.0972 354.827 47.3589C406.375 47.6239 422.799 -0.263949 474.347 0.00109617C525.236 0.262751 541.111 47.0972 592 47.3589C643.548 47.6239 659.972 -0.263949 711.521 0.00109617C762.409 0.262751 778.285 47.0972 829.174 47.3589C880.722 47.6239 897.146 -0.263949 948.694 0.00109617C999.583 0.262751 1015.46 47.3589 1066.35 47.3589C1117.24 47.3589 1184 0.00109617 1184 0.00109617" stroke="black"/>
+</g>
+</pattern></defs>
+</svg>

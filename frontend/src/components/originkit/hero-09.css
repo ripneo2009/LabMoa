@@ -1,0 +1,297 @@
+/* hero-09 — editorial word-globe hero (from moleeforx-del/word-globe-hero)
+ * Class names prefixed with h09- to avoid collisions in shared preview docs.
+ */
+
+.h09-hero-shell,
+.h09-hero-shell * {
+  box-sizing: border-box;
+}
+
+.h09-hero-shell {
+  color: #080808;
+  font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color-scheme: light;
+}
+
+.h09-hero-shell a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.h09-logo {
+  cursor: pointer;
+}
+
+.h09-logo-text {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+}
+
+.h09-top-nav nav a {
+  cursor: pointer;
+}
+
+/* Beat `.h09-hero-shell a { color: inherit }` so label stays white on dark fill. */
+.h09-hero-shell .h09-button-dark {
+  background: #080808;
+  color: #fff;
+}
+
+.h09-hero-shell .h09-button-dark:hover {
+  background: #323232;
+}
+
+.h09-hero-shell {
+  position: relative;
+  width: 100%;
+  max-width: 1710px;
+  min-height: 100svh;
+  height: max(800px, 100svh);
+  margin-inline: auto;
+  overflow: hidden;
+  background: #f2f2f2;
+}
+
+.h09-top-nav {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  height: 74px;
+  padding: 0 58px;
+  border-bottom: 1px solid rgb(0 0 0 / 10%);
+}
+
+.h09-top-nav nav { display: flex; gap: 24px; font-size: 16px; letter-spacing: -0.02em; }
+.h09-top-nav nav a { transition: opacity 160ms ease; }
+.h09-top-nav nav a:hover { opacity: .5; }
+
+.h09-logo { position: relative; display: block; width: 40px; height: 28px; }
+.h09-logo img { display: block; width: 100%; height: 100%; }
+
+.h09-button { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; padding: 12px 16px; font-size: 16px; letter-spacing: -0.02em; cursor: pointer; border: none; font-family: inherit; }
+.h09-button-light { border: 1px solid rgb(0 0 0 / 10%); background: white; color: #080808; }
+.h09-button-light:hover { background: #e8e8e8; }
+.h09-nav-cta { justify-self: end; }
+
+.h09-content-rails { position: absolute; z-index: 3; inset: 0 48px; border-inline: 1px solid rgb(0 0 0 / 10%); pointer-events: none; }
+
+/* 대전 항공사진 배경 — 흐리게 깔아 실제 장소감을 주는 용도라 선명할 필요가 없다.
+   진입 시 딱 1번만 재생되는 Ken Burns 줌아웃으로 무게감을 준다(무한 루프 아님, §4.3 허용).
+   prefers-reduced-motion에서는 globals.css의 전역 규칙이 animation-duration을 0.01ms로
+   눌러 자동으로 정지 상태가 된다. */
+.h09-photo-bg {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+}
+.h09-photo-bg-img {
+  object-fit: cover;
+  /* 파티클 텍스트가 더 크고 촘촘해져 자체 대비가 생겼으니, 블러를 다시 낮춰 "대전인 걸
+     알아볼 수 있는" 수준으로 되돌리되 채도는 낮게 유지해 튀지 않게 한다. */
+  filter: blur(9px) saturate(0.5) brightness(0.98);
+  transform: scale(1.1);
+  animation: h09-photo-kenburns 6s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
+}
+@keyframes h09-photo-kenburns {
+  from { transform: scale(1.17); }
+  to { transform: scale(1.1); }
+}
+
+/* 사진 위 스크림 — §3.2 밝은 배경 톤으로 씻어내 파티클 텍스트·헤드라인의 명도 대비(4.5:1)를
+   지킨다. 대전이 알아볼 수 있게 보여야 한다는 피드백에 맞춰 위쪽 스크림을 다시 옅게 뺐다. */
+.h09-photo-scrim {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgb(245 247 250 / 18%) 0%,
+    rgb(245 247 250 / 28%) 45%,
+    rgb(245 247 250 / 72%) 78%,
+    rgb(245 247 250 / 90%) 100%
+  );
+}
+
+.h09-wave-pattern {
+  position: absolute;
+  z-index: 2;
+  inset: 74px 48px 0;
+  background-image: url("/originkit/hero-09/word-globe-background.svg");
+  background-position: top center;
+  background-repeat: repeat-y;
+  background-size: 100% auto;
+  opacity: 0.6;
+}
+
+.h09-globe-stage {
+  position: absolute;
+  z-index: 2;
+  top: 20px;
+  left: 50%;
+  width: 720px;
+  height: 720px;
+  transform: translateX(-50%);
+}
+
+.h09-hero-content { position: absolute; z-index: 5; bottom: 48px; left: 50%; display: flex; width: calc(100% - 116px); align-items: flex-end; justify-content: space-between; transform: translateX(-50%); }
+.h09-headline-block { width: 458px; }
+/* 사진 배경 위에서도 명도 대비를 지키기 위한 카드 — details-block의 p와 같은 톤 */
+.h09-headline-copy {
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 70%);
+  backdrop-filter: blur(6px);
+  width: fit-content;
+}
+.h09-hero-shell h1 { margin: 0; font-size: 48px; font-weight: 400; line-height: .97; letter-spacing: -0.04em; color: #080808; }
+.h09-actions { display: flex; gap: 16px; margin-top: 16px; }
+.h09-actions .h09-button { min-width: 100px; padding: 16px 24px; }
+.h09-details-block { width: 376px; }
+/* 파티클 구체가 큰 화면에서 이 블록과 겹칠 수 있어, 옅은 반투명 배경으로 가독성을 확보한다. */
+.h09-details-block > p {
+  margin: 0 0 16px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 70%);
+  backdrop-filter: blur(6px);
+  color: rgb(0 0 0 / 70%);
+  font-size: 16px;
+  line-height: 1.4;
+}
+.h09-stats { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid rgb(0 0 0 / 10%); background: rgb(255 255 255 / 80%); backdrop-filter: blur(6px); }
+.h09-stats > div { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; }
+.h09-stats > div + div { border-left: 1px solid rgb(0 0 0 / 10%); }
+.h09-stats strong { font-size: 28px; font-weight: 400; line-height: 1; letter-spacing: -0.02em; }
+.h09-stats span { color: rgb(0 0 0 / 60%); font-size: 14px; }
+
+@media (min-width: 1280px) {
+  .h09-globe-stage {
+    width: clamp(720px, calc(100svh - 60px), 900px);
+    height: clamp(720px, calc(100svh - 60px), 900px);
+  }
+
+  .h09-headline-block { width: clamp(500px, 38vw, 608px); }
+  .h09-hero-shell h1 { font-size: clamp(53px, 4.1vw, 66px); }
+  .h09-actions { gap: clamp(16px, 1.25vw, 20px); margin-top: clamp(16px, 1.25vw, 20px); }
+  .h09-actions .h09-button {
+    min-width: clamp(100px, 7.8125vw, 125px);
+    padding: clamp(16px, 1.25vw, 20px) clamp(24px, 1.875vw, 30px);
+  }
+
+  .h09-details-block { width: clamp(406px, 31.5vw, 504px); }
+  .h09-details-block > p {
+    margin-bottom: clamp(16px, 1.25vw, 20px);
+    font-size: clamp(17px, 1.35vw, 21.5px);
+  }
+  .h09-stats > div {
+    gap: clamp(8px, .625vw, 10px);
+    padding: clamp(12px, .9375vw, 15px) clamp(16px, 1.25vw, 20px);
+  }
+  .h09-stats strong { font-size: clamp(30px, 2.35vw, 38px); }
+  .h09-stats span { font-size: clamp(15px, 1.18vw, 19px); }
+}
+
+/* The source frame is 1280 × 1000. Between mobile and full desktop, scale
+   every spatial value together so the composition keeps the same aspect and
+   the globe never grows out of proportion to the page. */
+@media (min-width: 801px) and (max-width: 1279px) {
+  .h09-hero-shell { min-height: 100svh; height: max(62.5vw, 100svh); }
+
+  .h09-top-nav {
+    height: 5.78125vw;
+    padding-inline: 4.53125vw;
+  }
+  .h09-top-nav nav { gap: 1.875vw; font-size: 1.25vw; }
+  .h09-logo { width: 3.125vw; height: 2.1875vw; }
+
+  .h09-button {
+    min-height: 3.75vw;
+    padding: .9375vw 1.25vw;
+    font-size: 1.25vw;
+  }
+
+  .h09-content-rails { inset-inline: 3.75vw; }
+  .h09-wave-pattern { inset: 5.78125vw 3.75vw 0; background-size: 100% auto; }
+
+  .h09-globe-stage {
+    top: 1.5625vw;
+    width: 56.25vw;
+    height: 56.25vw;
+  }
+
+  .h09-hero-content {
+    top: auto;
+    bottom: 3.75vw;
+    width: 90.9375vw;
+  }
+  .h09-headline-block { width: 35.78125vw; }
+  .h09-hero-shell h1 { font-size: 3.75vw; }
+  .h09-actions { gap: 1.25vw; margin-top: 1.25vw; }
+  .h09-actions .h09-button { min-width: 7.8125vw; padding: 1.25vw 1.875vw; }
+
+  .h09-details-block { width: 29.375vw; }
+  .h09-details-block > p { margin-bottom: 1.25vw; font-size: 1.25vw; }
+  .h09-stats > div { gap: .625vw; padding: .9375vw 1.25vw; }
+  .h09-stats strong { font-size: 2.1875vw; }
+  .h09-stats span { font-size: 1.09375vw; }
+}
+
+/* Tall desktop windows need the visual to grow vertically as well as
+   horizontally; otherwise bottom-anchored copy leaves a hollow middle. */
+@media (min-width: 801px) and (max-aspect-ratio: 4 / 3) {
+  .h09-globe-stage {
+    top: clamp(20px, 12svh, 200px);
+    width: clamp(720px, 72vw, 1100px);
+    height: clamp(720px, 72vw, 1100px);
+  }
+}
+
+@media (max-width: 1024px) {
+  .h09-headline-block h1,
+  .h09-details-block > p,
+  .h09-stats > div {
+    text-align: center;
+  }
+
+  .h09-actions {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 800px) {
+  .h09-hero-shell {
+    min-height: max(100svh, calc(620px + min(500px, 100vw)));
+    height: max(100svh, calc(620px + min(500px, 100vw)));
+  }
+  .h09-top-nav { grid-template-columns: 1fr auto; height: 76px; padding-inline: 32px; }
+  .h09-top-nav nav { display: none; }
+  .h09-nav-cta { min-height: 40px; padding: 8px 12px; }
+  .h09-content-rails { inset-inline: 20px; }
+  .h09-wave-pattern { inset: 76px 20px 0; }
+  .h09-globe-stage { top: 80px; width: min(500px, 100vw); height: min(500px, 100vw); }
+  .h09-hero-content {
+    top: calc(96px + min(500px, 100vw));
+    bottom: auto;
+    width: calc(100% - 64px);
+    flex-direction: column;
+    align-items: stretch;
+    gap: 36px;
+  }
+  .h09-headline-block, .h09-details-block { width: 100%; }
+  .h09-details-block { transform: none; }
+  .h09-hero-shell h1 { font-size: clamp(40px, 11vw, 52px); }
+}
+
+@media (max-width: 420px) {
+  .h09-hero-content { width: calc(100% - 48px); }
+  .h09-details-block > p { font-size: 14px; }
+  .h09-stats > div { padding-inline: 12px; }
+  .h09-stats strong { font-size: 24px; }
+}
