@@ -237,7 +237,7 @@ function SearchResults({ labs, hasFilters = false }: SearchResultsProps) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: DURATION.base, ease: EASE.out }}
-              className="pointer-events-auto"
+              className="pointer-events-auto min-h-0 flex-1"
             >
               <SearchWizard
                 candidates={recommendationCandidates}
@@ -260,6 +260,7 @@ function SearchResults({ labs, hasFilters = false }: SearchResultsProps) {
           )}
         </AnimatePresence>
 
+        {!wizardOpen && (
         <div className="pointer-events-auto min-h-0 flex-1 overflow-y-auto rounded-xl border border-border bg-card/95 p-3 backdrop-blur">
           {paperRecommendation && (
             <AiPaperRecommendationList
@@ -302,6 +303,7 @@ function SearchResults({ labs, hasFilters = false }: SearchResultsProps) {
             selectedLabId={selectedLabId}
           />
         </div>
+        )}
       </div>
     </div>
   );

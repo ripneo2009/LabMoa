@@ -124,8 +124,8 @@ function SearchWizard({
   }
 
   return (
-    <Card className="max-h-[calc(100svh-9rem)] overflow-hidden">
-      <div className="flex max-h-[calc(100svh-9rem)] flex-col gap-4 p-5">
+    <Card className="h-full max-h-full overflow-hidden">
+      <div className="flex h-full min-h-0 flex-col gap-4 p-5">
         <WizardProgress currentStep={step} totalSteps={TOTAL_STEPS} />
 
         <div className="relative min-h-0 overflow-y-auto pr-1">
