@@ -41,7 +41,7 @@ function Header({ user }: HeaderProps) {
           <Button asChild variant="default" size="sm">
             <Link href="/search">연구실 찾기</Link>
           </Button>
-          {user ? (
+          {user && (
             <>
               {user.role === "mentor" ? (
                 <Button asChild variant="ghost" size="sm">
@@ -58,15 +58,6 @@ function Header({ user }: HeaderProps) {
                   로그아웃
                 </Button>
               </form>
-            </>
-          ) : (
-            <>
-              <Button asChild variant="ghost" size="sm">
-                <Link href="/login">로그인</Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link href="/signup">회원가입</Link>
-              </Button>
             </>
           )}
         </nav>
