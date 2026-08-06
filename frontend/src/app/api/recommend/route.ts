@@ -12,14 +12,25 @@ function shuffle<T>(items: T[]): T[] {
   return shuffled;
 }
 
-export async function POST() {
+interface RecommendRequest {
+  query?: string;
+}
+
+interface GeminiRecommendation {
+  ids?: string[];
+  text?: string;
+}
+
+export async function POST(request: Request) {
   const apiKey = process.env.GEMINI_API_KEY;
-  const institutions = shuffle(researchInstitutes).slice(0, 3);
-  const fallbackText = institutions
+  const body = (await request.json().catch(() => ({}))) as RecommendRequest;
+  const query = body.query?.trim() ?? "";
+  const fallbackInstitutions = shuffle(researchInstitutes).slice(0, 3);
+  const fallbackText = fallbackInstitutions
     .map(({ name, description }) => `${name} — ${description}`)
     .join("\n");
 
-  if (institutions.length === 0) {
+  if (researchInstitutes.length === 0) {
     return NextResponse.json(
       { error: "현재 등록된 연구기관이 없습니다." },
       { status: 404 },
@@ -27,7 +38,7 @@ export async function POST() {
   }
 
   if (!apiKey) {
-    return NextResponse.json({ text: fallbackText, institutions, source: "catalog" });
+    return NextResponse.json({ text: fallbackText, institutions: fallbackInstitutions, source: "catalog" });
   }
 
   try {
@@ -40,22 +51,32 @@ export async function POST() {
 - 전체 답변은 간결한 한국어로 작성하고 마크다운 제목이나 표는 사용하지 마세요.
 
 후보 연구실:
-${JSON.stringify(institutions.map(({ name, description }) => ({ name, description })), null, 2)}`;
+User search criteria: ${query || "No criteria provided"}
+
+Select exactly three of the candidate institutions that best match the search criteria.
+Return JSON only in this shape: {"ids":["candidate-id"],"text":"A concise Korean explanation"}.
+Use only IDs and facts present in the candidate list. Do not invent institutions.
+
+${JSON.stringify(researchInstitutes.map(({ id, name, description }) => ({ id, name, description })), null, 2)}`;
 
     const ai = new GoogleGenAI({ apiKey });
     const result = await ai.models.generateContent({
-      model: process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
+      model: process.env.GEMINI_MODEL ?? "gemini-3.5-flash",
       contents: prompt,
+      config: { responseMimeType: "application/json" },
     });
 
-    const text = result.text?.trim();
-    if (!text) {
+    const parsed = JSON.parse(result.text ?? "{}") as GeminiRecommendation;
+    const selectedIds = new Set(parsed.ids?.slice(0, 3));
+    const institutions = researchInstitutes.filter(({ id }) => selectedIds.has(id));
+    const text = parsed.text?.trim();
+    if (!text || institutions.length === 0) {
       throw new Error("Gemini returned an empty response");
     }
 
     return NextResponse.json({ text, institutions, source: "gemini" });
   } catch (error) {
     console.error("Gemini recommendation failed", error);
-    return NextResponse.json({ text: fallbackText, institutions, source: "catalog" });
+    return NextResponse.json({ text: fallbackText, institutions: fallbackInstitutions, source: "catalog" });
   }
 }

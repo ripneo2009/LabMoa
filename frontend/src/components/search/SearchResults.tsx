@@ -8,7 +8,7 @@
 // 태그 기준으로 즉시 한 번 더 필터링하는 클라이언트 사이드 텍스트 검색이다.
 import * as React from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Sparkles, SlidersHorizontal, X } from "lucide-react";
+import { LoaderCircle, Search, Sparkles, SlidersHorizontal, X } from "lucide-react";
 
 import { Button, Card, Input } from "@/components/ui";
 import { DURATION, EASE } from "@/lib/constants/motion";
@@ -28,6 +28,8 @@ function SearchResults({ labs, hasFilters = false }: SearchResultsProps) {
   const [hoveredLabId, setHoveredLabId] = React.useState<string | null>(null);
   const [selectedLabId, setSelectedLabId] = React.useState<string | null>(null);
   const [query, setQuery] = React.useState("");
+  const [isSearching, setIsSearching] = React.useState(false);
+  const [searchError, setSearchError] = React.useState<string | null>(null);
   const [wizardOpen, setWizardOpen] = React.useState(!hasFilters);
   const [aiRecommendation, setAiRecommendation] = React.useState<InstituteRecommendation | null>(null);
 
@@ -53,6 +55,33 @@ function SearchResults({ labs, hasFilters = false }: SearchResultsProps) {
     [aiRecommendation, filteredLabs],
   );
 
+  async function searchWithAi(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery || isSearching) return;
+
+    setIsSearching(true);
+    setSearchError(null);
+    setAiRecommendation(null);
+    try {
+      const response = await fetch("/api/recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: trimmedQuery }),
+      });
+      const data = (await response.json()) as Partial<InstituteRecommendation> & { error?: string };
+      if (!response.ok || !data.text || !data.institutions?.length || !data.source) {
+        throw new Error(data.error || "AI 추천을 불러오지 못했습니다.");
+      }
+      setAiRecommendation(data as InstituteRecommendation);
+      setWizardOpen(false);
+    } catch (error) {
+      setSearchError(error instanceof Error ? error.message : "AI 검색에 실패했습니다.");
+    } finally {
+      setIsSearching(false);
+    }
+  }
+
   return (
     <div className="relative h-[calc(100svh-4rem)] w-full overflow-hidden">
       <LabMap
@@ -65,13 +94,23 @@ function SearchResults({ labs, hasFilters = false }: SearchResultsProps) {
           기본 스태킹만으로는 이 패널이 뒤로 밀려 클릭이 지도로 새어나갈 수 있다.
           z-index를 명시해 항상 지도 위에 오도록 고정한다. */}
       <div className="pointer-events-none absolute inset-0 z-10 flex flex-col gap-3 p-4 sm:max-w-sm sm:p-6">
-        <div className="pointer-events-auto flex items-center gap-2">
+        <form className="pointer-events-auto flex items-center gap-2" onSubmit={searchWithAi}>
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="연구실 이름·기관·분야로 검색"
             className="bg-card/95 backdrop-blur"
           />
+          <Button
+            type="submit"
+            size="icon"
+            disabled={!query.trim() || isSearching}
+            aria-label="AI로 검색"
+            title="AI로 검색"
+            className="shrink-0"
+          >
+            {isSearching ? <LoaderCircle className="animate-spin" /> : <Search />}
+          </Button>
           {/* §3.3 "채움색 버튼은 화면당 1개" — 위저드 안의 "다음/검색 결과 보기"가 이미 solid이므로
               이 토글은 항상 outline으로 두고, 열림 상태는 테두리·아이콘 색으로만 구분한다. */}
           <Button
@@ -91,7 +130,13 @@ function SearchResults({ labs, hasFilters = false }: SearchResultsProps) {
               <SlidersHorizontal className="size-4" />
             )}
           </Button>
-        </div>
+        </form>
+
+        {searchError && (
+          <p role="alert" className="pointer-events-auto rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {searchError}
+          </p>
+        )}
 
         <AnimatePresence initial={false}>
           {wizardOpen && (

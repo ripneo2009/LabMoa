@@ -52,8 +52,16 @@ function SearchWizard({
     onRecommendationStart?.();
 
     try {
+      const query = [
+        filters.region,
+        filters.fields.join(", "),
+        filters.equipment.join(", "),
+        filters.experimentText,
+      ].filter(Boolean).join(" / ");
       const response = await fetch("/api/recommend", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
       });
       const data = (await response.json()) as RecommendResponse;
 
@@ -76,11 +84,11 @@ function SearchWizard({
   }
 
   return (
-    <Card className="overflow-visible">
-      <div className="flex flex-col gap-6 p-6">
+    <Card className="max-h-[calc(100svh-9rem)] overflow-hidden">
+      <div className="flex max-h-[calc(100svh-9rem)] flex-col gap-4 p-5">
         <WizardProgress currentStep={step} totalSteps={TOTAL_STEPS} />
 
-        <div className="relative overflow-hidden">
+        <div className="relative min-h-0 overflow-y-auto pr-1">
           <AnimatePresence mode="wait" custom={direction} initial={false}>
             <motion.div
               key={step}
@@ -114,7 +122,7 @@ function SearchWizard({
           </AnimatePresence>
         </div>
 
-        <div className="flex items-end justify-between gap-3">
+        <div className="flex shrink-0 items-end justify-between gap-3">
           <Button
             type="button"
             variant="outline"
