@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   try {
     const ai = new GoogleGenAI({ apiKey });
     const result = await ai.models.generateContent({
-      model: process.env.GEMINI_MODEL ?? "gemini-3.5-flash",
+      model: process.env.GEMINI_MODEL ?? "gemini-2.5-flash-lite",
       contents: `당신은 ${body.labName ?? "연구소"}의 예약 및 연구 상담 담당자 ${body.contactName ?? "담당자"}입니다.
 사용자의 연구 계획을 구체화하도록 돕고 필요한 장비, 시료, 안전수칙, 예약 준비사항을 한국어로 간결하게 안내하세요.
 실제 장비 보유 여부나 예약 확정을 단정하지 말고 담당자 확인이 필요하다고 안내하세요.

@@ -85,7 +85,7 @@ export async function POST(request: Request) {
       try {
         const ai = new GoogleGenAI({ apiKey });
         const result = await withTimeout(ai.models.generateContent({
-          model: process.env.GEMINI_MODEL ?? "gemini-3.5-flash",
+          model: process.env.GEMINI_MODEL ?? "gemini-2.5-flash-lite",
           contents: `다음은 OpenAlex에서 검색된 실제 논문의 제목과 초록입니다. 각 논문의 핵심 연구 목적, 방법, 결과를 초록에 있는 내용만으로 한국어 2~3문장으로 요약하세요. 정보가 없으면 추측하지 마세요. JSON만 반환하세요.\n\n${JSON.stringify(works.map((work) => ({ id: work.id, title: work.title, abstract: abstracts.get(work.id) })))}`,
           config: { responseMimeType: "application/json" },
         }), GEMINI_TIMEOUT_MS);
