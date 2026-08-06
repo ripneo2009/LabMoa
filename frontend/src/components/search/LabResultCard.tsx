@@ -2,6 +2,7 @@
 
 // 검색 결과 카드 — 랩 요약 정보 + 매칭 게이지 + 상세보기 (View Transitions API로 상세 페이지와 공유 요소 전환)
 import * as React from "react";
+import { CalendarCheck } from "lucide-react";
 
 import { Badge, Button, Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui";
 import { MatchGauge } from "@/components/charts";
@@ -67,9 +68,13 @@ function LabResultCard({ lab, onHoverStart, onHoverEnd, selected = false }: LabR
         </div>
         <MatchGauge score={lab.matchScore} reasons={lab.matchReasons} />
       </CardContent>
-      <CardFooter className="justify-end bg-transparent p-0 px-4 pb-4">
+      <CardFooter className="justify-end gap-2 bg-transparent p-0 px-4 pb-4">
         <Button type="button" variant="outline" size="sm" onClick={() => navigate(href)}>
           상세보기
+        </Button>
+        <Button type="button" size="sm" onClick={() => navigate(`/labs/${lab.id}/reserve`)}>
+          <CalendarCheck aria-hidden="true" />
+          예약 신청
         </Button>
       </CardFooter>
     </Card>

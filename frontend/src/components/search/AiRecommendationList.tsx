@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronDown, FlaskConical, Sparkles, X } from "lucide-react";
+import Link from "next/link";
+import { CalendarCheck, ChevronDown, FlaskConical, Sparkles, X } from "lucide-react";
 
 import { Badge, Button, Card } from "@/components/ui";
 import type { InstituteRecommendation } from "@/types/recommendation";
@@ -68,6 +69,12 @@ function AiRecommendationList({
                     <span className="text-xs text-muted-foreground">등록된 장비 정보가 없습니다.</span>
                   )}
                 </div>
+                <Button asChild className="mt-4 w-full">
+                  <Link href={`/labs/${institute.id}/reserve`}>
+                    <CalendarCheck aria-hidden="true" />
+                    예약 신청
+                  </Link>
+                </Button>
               </div>
             )}
           </Card>
