@@ -72,7 +72,11 @@ function LabResultCard({ lab, onHoverStart, onHoverEnd, selected = false }: LabR
         <Button type="button" variant="outline" size="sm" onClick={() => navigate(href)}>
           상세보기
         </Button>
-        <Button type="button" size="sm" onClick={() => navigate(`/labs/${lab.id}/reserve`)}>
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => navigate(`/labs/${encodeURIComponent(lab.id)}/reserve?name=${encodeURIComponent(lab.name)}`)}
+        >
           <CalendarCheck aria-hidden="true" />
           예약 신청
         </Button>

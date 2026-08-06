@@ -70,7 +70,7 @@ function AiRecommendationList({
                   )}
                 </div>
                 <Button asChild className="mt-4 w-full">
-                  <Link href={`/labs/${institute.id}/reserve`}>
+                  <Link href={`/labs/${encodeURIComponent(institute.id)}/reserve?name=${encodeURIComponent(institute.name)}`}>
                     <CalendarCheck aria-hidden="true" />
                     예약 신청
                   </Link>
