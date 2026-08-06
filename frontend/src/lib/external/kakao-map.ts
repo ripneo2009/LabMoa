@@ -91,9 +91,17 @@ export function loadKakaoMapSdk(appKey: string): Promise<KakaoMapsSdk> {
     script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false&libraries=services`;
     script.async = true;
     script.onload = () => {
-      window.kakao!.maps.load(() => resolve(window.kakao!));
+      if (!window.kakao?.maps) {
+        loadPromise = null;
+        reject(new Error("Kakao Map SDK authorization failed."));
+        return;
+      }
+      window.kakao.maps.load(() => resolve(window.kakao!));
     };
-    script.onerror = () => reject(new Error("Kakao Map SDK 로드에 실패했습니다."));
+    script.onerror = () => {
+      loadPromise = null;
+      reject(new Error("Kakao Map SDK load failed."));
+    };
     document.head.appendChild(script);
   });
 

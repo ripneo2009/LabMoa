@@ -24,6 +24,30 @@ interface GeminiRecommendation {
   equipment?: Record<string, string[]>;
 }
 
+function parseFirstJsonObject(text: string): GeminiRecommendation {
+  const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+  const start = cleaned.indexOf("{");
+  if (start < 0) throw new Error("Gemini returned no JSON object");
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let index = start; index < cleaned.length; index += 1) {
+    const char = cleaned[index];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (char === "\\") escaped = true;
+      else if (char === '"') inString = false;
+      continue;
+    }
+    if (char === '"') inString = true;
+    else if (char === "{") depth += 1;
+    else if (char === "}" && --depth === 0) {
+      return JSON.parse(cleaned.slice(start, index + 1)) as GeminiRecommendation;
+    }
+  }
+  throw new Error("Gemini returned incomplete JSON");
+}
+
 export async function POST(request: Request) {
   const apiKey = process.env.GEMINI_API_KEY;
   const body = (await request.json().catch(() => ({}))) as RecommendRequest;
@@ -73,7 +97,7 @@ ${JSON.stringify(candidateInstitutions.map(({ id, name, description, equipment }
       config: { responseMimeType: "application/json" },
     });
 
-    const parsed = JSON.parse(result.text ?? "{}") as GeminiRecommendation;
+    const parsed = parseFirstJsonObject(result.text ?? "");
     const selectedIds = new Set(parsed.ids?.slice(0, 3));
     const institutions = candidateInstitutions
       .filter(({ id }) => selectedIds.has(id))

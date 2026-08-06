@@ -43,6 +43,7 @@ function LabReservationFlow({ labId, labName, contacts }: LabReservationFlowProp
   const [draft, setDraft] = React.useState("");
   const [confirmed, setConfirmed] = React.useState(false);
   const [messages, setMessages] = React.useState<ConsultationMessage[]>([]);
+  const [isReplying, setIsReplying] = React.useState(false);
   const selectedContact = availableContacts.find((contact) => contact.id === contactId) ?? availableContacts[0];
 
   function handleDate(date: string) {
@@ -59,18 +60,43 @@ function LabReservationFlow({ labId, labName, contacts }: LabReservationFlowProp
     }
   }
 
-  function sendMessage() {
+  async function sendMessage() {
     const text = draft.trim();
-    if (!text) return;
+    if (!text || isReplying) return;
     setMessages((current) => [...current, { id: crypto.randomUUID(), sender: "user", text }]);
     setDraft("");
-    window.setTimeout(() => {
+    setIsReplying(true);
+    try {
+      const response = await fetch("/api/consult", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          labName,
+          contactName: selectedContact.name,
+          date: selectedDate,
+          experiment,
+          message: text,
+          history: messages,
+        }),
+      });
+      const data = (await response.json()) as { reply?: string; error?: string };
+      if (!response.ok || !data.reply) {
+        throw new Error(data.error || "상담 응답을 받지 못했습니다.");
+      }
       setMessages((current) => [...current, {
         id: crypto.randomUUID(),
         sender: "contact",
-        text: "내용을 확인했습니다. 선택한 일정과 장비 사용 가능 여부를 검토해 안내드리겠습니다.",
+        text: data.reply!,
       }]);
-    }, 500);
+    } catch {
+      setMessages((current) => [...current, {
+        id: crypto.randomUUID(),
+        sender: "contact",
+        text: "상담 AI 연결이 지연되고 있습니다. 잠시 후 다시 질문해 주세요.",
+      }]);
+    } finally {
+      setIsReplying(false);
+    }
   }
 
   if (!trainingComplete) {
@@ -171,6 +197,9 @@ function LabReservationFlow({ labId, labName, contacts }: LabReservationFlowProp
                       {message.text}
                     </div>
                   ))}
+                  {isReplying && (
+                    <p className="text-xs text-muted-foreground">AI 담당자가 답변을 작성하고 있습니다...</p>
+                  )}
                 </div>
               </div>
               <form
@@ -183,7 +212,7 @@ function LabReservationFlow({ labId, labName, contacts }: LabReservationFlowProp
                 <div className="min-w-0 flex-1">
                   <Input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="상담 메시지 입력" />
                 </div>
-                <Button type="submit" size="icon" disabled={!draft.trim()} aria-label="메시지 보내기">
+                <Button type="submit" size="icon" disabled={!draft.trim() || isReplying} aria-label="메시지 보내기">
                   <Send aria-hidden="true" />
                 </Button>
               </form>

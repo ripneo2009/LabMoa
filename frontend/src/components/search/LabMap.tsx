@@ -46,6 +46,7 @@ function LabMap({ labs, hoveredLabId, onSelectLab }: LabMapProps) {
   const mapRef = React.useRef<KakaoMapInstance | null>(null)
   const overlaysRef = React.useRef<KakaoOverlayInstance[]>([])
   const [mapReady, setMapReady] = React.useState(false)
+  const [mapFailed, setMapFailed] = React.useState(false)
   const [markerContainers, setMarkerContainers] = React.useState<
     Record<string, HTMLDivElement>
   >({})
@@ -69,11 +70,16 @@ function LabMap({ labs, hoveredLabId, onSelectLab }: LabMapProps) {
     if (!containerRef.current) return
 
     let cancelled = false
+    let loaded = false
+    const fallbackTimer = window.setTimeout(() => {
+      if (!cancelled && !loaded) setMapFailed(true)
+    }, 6000)
 
     let cleanupWheel: (() => void) | undefined
 
     loadKakaoMapSdk(appKey).then((kakao) => {
       if (cancelled || !containerRef.current) return
+      loaded = true
       const center = new kakao.maps.LatLng(DAEJEON_CENTER.lat, DAEJEON_CENTER.lng)
       kakaoRef.current = kakao
       // 위성사진 + 도로/지명 라벨이 겹쳐 보이는 HYBRID를 기본값으로 — 지도 종류 전환
@@ -109,10 +115,14 @@ function LabMap({ labs, hoveredLabId, onSelectLab }: LabMapProps) {
 
       mapRef.current = map
       setMapReady(true)
+    }).catch((error) => {
+      console.error("Kakao map unavailable; using OpenStreetMap fallback", error)
+      if (!cancelled) setMapFailed(true)
     })
 
     return () => {
       cancelled = true
+      window.clearTimeout(fallbackTimer)
       cleanupWheel?.()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -211,7 +221,17 @@ function LabMap({ labs, hoveredLabId, onSelectLab }: LabMapProps) {
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      <div ref={containerRef} className="h-full w-full" />
+      {mapFailed ? (
+        <iframe
+          title="대전 연구소 지도"
+          src="https://www.openstreetmap.org/export/embed.html?bbox=127.20%2C36.20%2C127.55%2C36.48&layer=mapnik&marker=36.3504%2C127.3845"
+          className="h-full w-full border-0"
+          loading="eager"
+          referrerPolicy="no-referrer"
+        />
+      ) : (
+        <div ref={containerRef} className="h-full w-full" />
+      )}
       {resolvedLabs.map((lab, index) => {
         const container = markerContainers[lab.id]
         if (!container) return null
