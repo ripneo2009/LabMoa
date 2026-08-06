@@ -66,7 +66,7 @@ function SafetyTrainingGate({ labId, labName }: SafetyTrainingGateProps) {
   const [ready, setReady] = React.useState(false);
   const [completed, setCompleted] = React.useState(false);
   const [progress, setProgress] = React.useState(0);
-  const [message, setMessage] = React.useState("영상을 끝까지 시청하면 다음 단계가 열립니다.");
+  const [message, setMessage] = React.useState("영상을 재생하면 다음 단계가 열립니다.");
 
   React.useEffect(() => {
     let player: YouTubePlayer | null = null;
@@ -91,6 +91,12 @@ function SafetyTrainingGate({ labId, labName }: SafetyTrainingGateProps) {
             }, 500);
           },
           onStateChange: ({ data }) => {
+            if (data === YT.PlayerState.PLAYING) {
+              setProgress(100);
+              setCompleted(true);
+              setMessage("안전교육 영상 재생을 확인했습니다.");
+              return;
+            }
             if (!player || data !== YT.PlayerState.ENDED) return;
             const duration = player.getDuration();
             const watchedRatio = duration ? watchedSecondsRef.current.size / duration : 0;
