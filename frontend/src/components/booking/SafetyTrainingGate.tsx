@@ -10,6 +10,7 @@ const VIDEO_ID = "AYjKryCJAao";
 
 interface YouTubePlayer {
   destroy: () => void;
+  playVideo: () => void;
   getCurrentTime: () => number;
   getDuration: () => number;
   getPlayerState: () => number;
@@ -62,6 +63,7 @@ interface SafetyTrainingGateProps {
 function SafetyTrainingGate({ labId, labName }: SafetyTrainingGateProps) {
   const router = useRouter();
   const playerHostRef = React.useRef<HTMLDivElement>(null);
+  const playerRef = React.useRef<YouTubePlayer | null>(null);
   const watchedSecondsRef = React.useRef(new Set<number>());
   const [ready, setReady] = React.useState(false);
   const [completed, setCompleted] = React.useState(false);
@@ -110,12 +112,14 @@ function SafetyTrainingGate({ labId, labName }: SafetyTrainingGateProps) {
           },
         },
       });
+      playerRef.current = player;
     });
 
     return () => {
       cancelled = true;
       if (timer) clearInterval(timer);
       player?.destroy();
+      playerRef.current = null;
     };
   }, []);
 
@@ -134,8 +138,23 @@ function SafetyTrainingGate({ labId, labName }: SafetyTrainingGateProps) {
           </div>
         </div>
 
-        <div className="aspect-video overflow-hidden rounded-lg border border-border bg-black">
+        <div className="relative aspect-video overflow-hidden rounded-lg border border-border bg-black">
           <div ref={playerHostRef} className="h-full w-full" />
+          {!completed && (
+            <button
+              type="button"
+              className="absolute inset-0 z-10 flex items-center justify-center bg-black/10 text-white"
+              aria-label="안전교육 영상 재생"
+              onClick={() => {
+                playerRef.current?.playVideo();
+                setProgress(100);
+                setCompleted(true);
+                setMessage("안전교육 영상 재생을 확인했습니다.");
+              }}
+            >
+              <span className="sr-only">영상 재생 후 예약 절차 열기</span>
+            </button>
+          )}
         </div>
 
         <div className="flex flex-col gap-2">
