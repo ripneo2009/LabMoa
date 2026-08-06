@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LabBridge",
+  title: "LabMoa",
   description:
     "고등학생의 연구 아이디어를 대전의 실제 연구실과 연구자가 검증하고 실현시켜주는 플랫폼",
 };

@@ -1,24 +1,13 @@
-// 랜딩 페이지 — WordGlobeHeroSection(Originkit 템플릿, 실제 DB 통계) → ProblemCards → HowItWorks
-import { HowItWorks, ProblemCards, WordGlobeHeroSection } from "@/components/landing";
-import type { StatItem } from "@/components/charts";
-import { getPlatformStats } from "@/lib/queries/stats";
+// 랜딩 페이지 — WordGlobeHeroSection(Originkit 템플릿, "연구실 찾기" link-preview가 히어로
+// 우측 상단에 내장돼 있음) → ProblemCards
+// "이렇게 진행돼요"(HowItWorks) 섹션은 피드백에 따라 페이지에서 뺐다.
+import { ProblemCards, WordGlobeHeroSection } from "@/components/landing";
 
-// 정적 생성되지만 통계가 오래 고정되지 않도록 60초마다 재검증한다
-export const revalidate = 60;
-
-export default async function Home() {
-  const stats = await getPlatformStats();
-  const statItems: StatItem[] = [
-    { label: "연계 연구실", value: stats.labCount, suffix: "곳" },
-    { label: "수집 논문", value: stats.paperCount, suffix: "편" },
-    { label: "평균 검토 소요일", value: stats.avgReviewDays, suffix: "일", decimals: 1 },
-  ];
-
+export default function Home() {
   return (
     <>
-      <WordGlobeHeroSection stats={statItems} />
+      <WordGlobeHeroSection />
       <ProblemCards />
-      <HowItWorks />
     </>
   );
 }

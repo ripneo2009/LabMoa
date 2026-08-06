@@ -1,5 +1,7 @@
 /* hero-09 — editorial word-globe hero (from moleeforx-del/word-globe-hero)
  * Class names prefixed with h09- to avoid collisions in shared preview docs.
+ * 헤드라인/설명문/통계/CTA 버튼/상단 네비게이션은 전부 뺐다("이 글씨는 모두 지워줘" 피드백) —
+ * 지금 이 파일에는 배경(사진+스크림+웨이브)과 가운데 텍스트 모프 스테이지 스타일만 남아있다.
  */
 
 .h09-hero-shell,
@@ -19,32 +21,6 @@
   text-decoration: none;
 }
 
-.h09-logo {
-  cursor: pointer;
-}
-
-.h09-logo-text {
-  display: block;
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  cursor: pointer;
-}
-
-.h09-top-nav nav a {
-  cursor: pointer;
-}
-
-/* Beat `.h09-hero-shell a { color: inherit }` so label stays white on dark fill. */
-.h09-hero-shell .h09-button-dark {
-  background: #080808;
-  color: #fff;
-}
-
-.h09-hero-shell .h09-button-dark:hover {
-  background: #323232;
-}
-
 .h09-hero-shell {
   position: relative;
   width: 100%;
@@ -55,29 +31,6 @@
   overflow: hidden;
   background: #f2f2f2;
 }
-
-.h09-top-nav {
-  position: relative;
-  z-index: 10;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  height: 74px;
-  padding: 0 58px;
-  border-bottom: 1px solid rgb(0 0 0 / 10%);
-}
-
-.h09-top-nav nav { display: flex; gap: 24px; font-size: 16px; letter-spacing: -0.02em; }
-.h09-top-nav nav a { transition: opacity 160ms ease; }
-.h09-top-nav nav a:hover { opacity: .5; }
-
-.h09-logo { position: relative; display: block; width: 40px; height: 28px; }
-.h09-logo img { display: block; width: 100%; height: 100%; }
-
-.h09-button { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; padding: 12px 16px; font-size: 16px; letter-spacing: -0.02em; cursor: pointer; border: none; font-family: inherit; }
-.h09-button-light { border: 1px solid rgb(0 0 0 / 10%); background: white; color: #080808; }
-.h09-button-light:hover { background: #e8e8e8; }
-.h09-nav-cta { justify-self: end; }
 
 .h09-content-rails { position: absolute; z-index: 3; inset: 0 48px; border-inline: 1px solid rgb(0 0 0 / 10%); pointer-events: none; }
 
@@ -104,8 +57,8 @@
   to { transform: scale(1.1); }
 }
 
-/* 사진 위 스크림 — §3.2 밝은 배경 톤으로 씻어내 파티클 텍스트·헤드라인의 명도 대비(4.5:1)를
-   지킨다. 대전이 알아볼 수 있게 보여야 한다는 피드백에 맞춰 위쪽 스크림을 다시 옅게 뺐다. */
+/* 사진 위 스크림 — §3.2 밝은 배경 톤으로 씻어내 텍스트의 명도 대비(4.5:1)를 지킨다.
+   대전이 알아볼 수 있게 보여야 한다는 피드백에 맞춰 위쪽 스크림을 옅게 뺐다. */
 .h09-photo-scrim {
   position: absolute;
   z-index: 1;
@@ -138,64 +91,36 @@
   width: 720px;
   height: 720px;
   transform: translateX(-50%);
+  /* textmorph/정착 텍스트가 스테이지 폭 기준으로 상속받는 글자 크기 (width * 0.15) */
+  font-size: 108px;
 }
-
-.h09-hero-content { position: absolute; z-index: 5; bottom: 48px; left: 50%; display: flex; width: calc(100% - 116px); align-items: flex-end; justify-content: space-between; transform: translateX(-50%); }
-.h09-headline-block { width: 458px; }
-/* 사진 배경 위에서도 명도 대비를 지키기 위한 카드 — details-block의 p와 같은 톤 */
-.h09-headline-copy {
-  padding: 12px 16px;
-  border-radius: 8px;
-  background: rgb(255 255 255 / 70%);
-  backdrop-filter: blur(6px);
-  width: fit-content;
+/* textmorph는 자체 fontSize를 안 주고 이 상속값을 쓴다 — .h09-globe-stage의
+   font-size 브레이크포인트를 그대로 따라간다. */
+.h09-morph-settled {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #111827;
+  text-align: center;
+  white-space: nowrap;
+  transition: transform var(--dur-fast, 180ms) var(--ease-out, ease);
 }
-.h09-hero-shell h1 { margin: 0; font-size: 48px; font-weight: 400; line-height: .97; letter-spacing: -0.04em; color: #080808; }
-.h09-actions { display: flex; gap: 16px; margin-top: 16px; }
-.h09-actions .h09-button { min-width: 100px; padding: 16px 24px; }
-.h09-details-block { width: 376px; }
-/* 파티클 구체가 큰 화면에서 이 블록과 겹칠 수 있어, 옅은 반투명 배경으로 가독성을 확보한다. */
-.h09-details-block > p {
-  margin: 0 0 16px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: rgb(255 255 255 / 70%);
-  backdrop-filter: blur(6px);
-  color: rgb(0 0 0 / 70%);
-  font-size: 16px;
-  line-height: 1.4;
+/* 클릭하면 모핑이 다시 재생된다는 걸 넌지시 알리는 hover 힌트 — transform만 사용 */
+@media (hover: hover) {
+  .h09-morph-settled:hover {
+    transform: translateY(-2px);
+  }
 }
-.h09-stats { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid rgb(0 0 0 / 10%); background: rgb(255 255 255 / 80%); backdrop-filter: blur(6px); }
-.h09-stats > div { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; }
-.h09-stats > div + div { border-left: 1px solid rgb(0 0 0 / 10%); }
-.h09-stats strong { font-size: 28px; font-weight: 400; line-height: 1; letter-spacing: -0.02em; }
-.h09-stats span { color: rgb(0 0 0 / 60%); font-size: 14px; }
 
 @media (min-width: 1280px) {
   .h09-globe-stage {
     width: clamp(720px, calc(100svh - 60px), 900px);
     height: clamp(720px, calc(100svh - 60px), 900px);
+    font-size: clamp(108px, calc((100svh - 60px) * 0.15), 135px);
   }
-
-  .h09-headline-block { width: clamp(500px, 38vw, 608px); }
-  .h09-hero-shell h1 { font-size: clamp(53px, 4.1vw, 66px); }
-  .h09-actions { gap: clamp(16px, 1.25vw, 20px); margin-top: clamp(16px, 1.25vw, 20px); }
-  .h09-actions .h09-button {
-    min-width: clamp(100px, 7.8125vw, 125px);
-    padding: clamp(16px, 1.25vw, 20px) clamp(24px, 1.875vw, 30px);
-  }
-
-  .h09-details-block { width: clamp(406px, 31.5vw, 504px); }
-  .h09-details-block > p {
-    margin-bottom: clamp(16px, 1.25vw, 20px);
-    font-size: clamp(17px, 1.35vw, 21.5px);
-  }
-  .h09-stats > div {
-    gap: clamp(8px, .625vw, 10px);
-    padding: clamp(12px, .9375vw, 15px) clamp(16px, 1.25vw, 20px);
-  }
-  .h09-stats strong { font-size: clamp(30px, 2.35vw, 38px); }
-  .h09-stats span { font-size: clamp(15px, 1.18vw, 19px); }
 }
 
 /* The source frame is 1280 × 1000. Between mobile and full desktop, scale
@@ -204,19 +129,6 @@
 @media (min-width: 801px) and (max-width: 1279px) {
   .h09-hero-shell { min-height: 100svh; height: max(62.5vw, 100svh); }
 
-  .h09-top-nav {
-    height: 5.78125vw;
-    padding-inline: 4.53125vw;
-  }
-  .h09-top-nav nav { gap: 1.875vw; font-size: 1.25vw; }
-  .h09-logo { width: 3.125vw; height: 2.1875vw; }
-
-  .h09-button {
-    min-height: 3.75vw;
-    padding: .9375vw 1.25vw;
-    font-size: 1.25vw;
-  }
-
   .h09-content-rails { inset-inline: 3.75vw; }
   .h09-wave-pattern { inset: 5.78125vw 3.75vw 0; background-size: 100% auto; }
 
@@ -224,23 +136,8 @@
     top: 1.5625vw;
     width: 56.25vw;
     height: 56.25vw;
+    font-size: 8.44vw;
   }
-
-  .h09-hero-content {
-    top: auto;
-    bottom: 3.75vw;
-    width: 90.9375vw;
-  }
-  .h09-headline-block { width: 35.78125vw; }
-  .h09-hero-shell h1 { font-size: 3.75vw; }
-  .h09-actions { gap: 1.25vw; margin-top: 1.25vw; }
-  .h09-actions .h09-button { min-width: 7.8125vw; padding: 1.25vw 1.875vw; }
-
-  .h09-details-block { width: 29.375vw; }
-  .h09-details-block > p { margin-bottom: 1.25vw; font-size: 1.25vw; }
-  .h09-stats > div { gap: .625vw; padding: .9375vw 1.25vw; }
-  .h09-stats strong { font-size: 2.1875vw; }
-  .h09-stats span { font-size: 1.09375vw; }
 }
 
 /* Tall desktop windows need the visual to grow vertically as well as
@@ -250,18 +147,7 @@
     top: clamp(20px, 12svh, 200px);
     width: clamp(720px, 72vw, 1100px);
     height: clamp(720px, 72vw, 1100px);
-  }
-}
-
-@media (max-width: 1024px) {
-  .h09-headline-block h1,
-  .h09-details-block > p,
-  .h09-stats > div {
-    text-align: center;
-  }
-
-  .h09-actions {
-    justify-content: center;
+    font-size: clamp(108px, 10.8vw, 165px);
   }
 }
 
@@ -270,28 +156,7 @@
     min-height: max(100svh, calc(620px + min(500px, 100vw)));
     height: max(100svh, calc(620px + min(500px, 100vw)));
   }
-  .h09-top-nav { grid-template-columns: 1fr auto; height: 76px; padding-inline: 32px; }
-  .h09-top-nav nav { display: none; }
-  .h09-nav-cta { min-height: 40px; padding: 8px 12px; }
   .h09-content-rails { inset-inline: 20px; }
   .h09-wave-pattern { inset: 76px 20px 0; }
-  .h09-globe-stage { top: 80px; width: min(500px, 100vw); height: min(500px, 100vw); }
-  .h09-hero-content {
-    top: calc(96px + min(500px, 100vw));
-    bottom: auto;
-    width: calc(100% - 64px);
-    flex-direction: column;
-    align-items: stretch;
-    gap: 36px;
-  }
-  .h09-headline-block, .h09-details-block { width: 100%; }
-  .h09-details-block { transform: none; }
-  .h09-hero-shell h1 { font-size: clamp(40px, 11vw, 52px); }
-}
-
-@media (max-width: 420px) {
-  .h09-hero-content { width: calc(100% - 48px); }
-  .h09-details-block > p { font-size: 14px; }
-  .h09-stats > div { padding-inline: 12px; }
-  .h09-stats strong { font-size: 24px; }
+  .h09-globe-stage { top: 80px; width: min(500px, 100vw); height: min(500px, 100vw); font-size: min(75px, 15vw); }
 }

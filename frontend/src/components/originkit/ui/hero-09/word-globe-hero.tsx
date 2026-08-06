@@ -2,45 +2,61 @@
 "use client";
 
 // Editorial word-globe hero (원본: https://github.com/moleeforx-del/word-globe-hero).
-// 지구본 자리에는 Originkit의 globe(3D 회전 지구본, three.js) — 텍스트 파티클(pixeldrift →
-// dust-text-reveal) 여러 차례 실험 끝에 "글자 말고 지구본으로" 요청을 받아 다시 실제
-// 지구본으로 되돌렸다. dots 방식으로 대륙을 그리고, 대전 좌표에 마커를 찍어 "대전"이라는
-// 실제 장소감을 지구본 자체로 드러낸다 — 드래그로 회전, 호버 시 자동회전 정지(stopOnHover)
-// 가 기본 내장돼 있어 별도 인터랙션 래퍼 없이도 충분히 화려하다.
+// 지구본 자리는 여러 차례 바뀌었다: 회전 텍스트 구체 → 파티클 타이포그래피(pixeldrift →
+// dust-text-reveal) → 3D 지구본(globe, three.js) → 지금은 Originkit textmorph(구이 블러+스케일
+// 모핑)로 "LabMoa"와 "IN DAEJEON"이 서로 녹아들며 전환된다.
+// textmorph는 vendor 구현상 CSS `animation: ... infinite`로 무한 반복되는데, 이는 §4.3
+// "무한 루프 전면 금지"를 정면으로 어긴다. 컴포넌트 자체에 "N번만 돌고 멈춤" 옵션이 없어서,
+// 한 바퀴(LabMoa→IN DAEJEON→LabMoa)를 돈 뒤 정확히 LabMoa가 다시 완전히 보이는
+// 순간에 정적 텍스트로 갈아끼우는 방식으로 규정을 지켰다 — 애니메이션 자체는 vendor 그대로,
+// 반복 횟수만 유한하게 자른 것이라 "그대로 적용" 취지를 최대한 해치지 않는다.
+// 헤드라인·설명문·통계·CTA 버튼은 전부 뺐다(피드백에 따라 "이 글씨는 모두 지워줘") — 페이지의
+// 유일한 h1은 이제 TextMorph/정착 텍스트가 맡는다(tag="h1"), 그래야 랜딩 페이지에 제목이
+// 하나도 없는 접근성 회귀가 생기지 않는다. 정착된 "LabMoa" 텍스트를 클릭하면 replayToken이
+// 바뀌면서 TextMorph가 key로 강제 재마운트되어 모핑을 처음부터 다시 재생한다(정지 상태로 계속
+// 있는 텍스트가 아니라는 걸 알리려 pointer 커서를 준다). reduced-motion에서는 애초에 애니메이션이
+// 없으므로 클릭 핸들러 자체를 안 붙인다.
 // 원본은 자체 상단 네비게이션(header)이 있었지만, 이미 로그인 상태를 아는 전역
 // Header(layout.tsx)가 모든 페이지에 떠 있어 중복이라 걷어냈다 — 그 자리(74px)는
 // wave-pattern 배경 여백으로 그대로 남는다.
-// 배경에는 대전 도심 항공사진을 흐리게 깔아 "대전"이라는 실제 장소감을 한 번 더 준다 —
-// 그 위에 §3.2 팔레트 톤(밝은 배경)의 스크림을 얹어 지구본·헤드라인의 명도 대비를 지킨다.
+// 배경에는 대전 도심 항공사진을 흐리게 깔아 "대전"이라는 실제 장소감을 준다 — 그 위에
+// §3.2 팔레트 톤(밝은 배경)의 스크림을 얹어 텍스트의 명도 대비를 지킨다.
+// "연구실 찾기"는 헤더의 상시 노출 solid 버튼 하나로 통일했다 — 한때 이 히어로 우측
+// 상단에 Originkit link-preview(호버 시 /search 스크린샷 미리보기)로도 띄워봤지만
+// 헤더 버튼과 중복이라 뺐다.
 import * as React from "react";
 import Image from "next/image";
-import Link from "next/link";
+import localFont from "next/font/local";
 
-import Globe from "@/components/originkit/ui/globe";
-import { FadeUp } from "@/components/motion";
-import { DURATION } from "@/lib/constants/motion";
-import type { StatItem } from "@/components/charts";
+import TextMorph from "@/components/originkit/ui/textmorph";
 
 // public/ 정적 파일은 import가 아니라 URL 문자열로 참조한다 (webpack 모듈 그래프 밖).
 const HERO_PHOTO_SRC = "/hero/daejeon-aerial.png";
 
-// Globe의 dots/markerConfig는 객체 리터럴이라 매 렌더마다 새 참조가 생기면 내부
-// useEffect(WebGL 씬 생성)가 불필요하게 다시 돌아 통째로 재마운트된다 — 검색 지도(LabMap)
-// GLOBE_DOTS 상수와 같은 이유로 모듈 스코프 상수로 고정한다.
-const GLOBE_DOTS = { color: "#0B5FFF", size: 6, density: 7, allDots: false };
-// 대전 좌표 — LabMap.tsx의 DAEJEON_CENTER와 동일한 값.
-const GLOBE_MARKERS = {
-  markers: [{ lat: 36.3504, lng: 127.3845 }],
-  color: "#FFFFFF",
-  size: 60,
-};
+// CDN(@import) 대신 로컬 폰트 파일을 next/font/local로 셀프호스팅 — 외부 네트워크 의존
+// 없이, preload·자동 font-display: swap까지 딸려온다. TextMorph는 캔버스가 아니라 실제
+// DOM에 순수 문자열 font-family를 꽂는 방식이라 여기서 만든 고유 클래스명을 그대로 넘긴다.
+const pretendardBold = localFont({
+  src: "../../../../fonts/Pretendard-Bold.woff2",
+  weight: "700",
+  display: "swap",
+});
 
-export interface WordGlobeHeroProps {
-  stats: StatItem[];
-}
+const MORPH_WORDS = "LabMoa\nIN DAEJEON";
+// §3.2 --color-text 톤 — 파란색이 아닌 검정 계열로.
+const MORPH_COLOR = "#111827";
+// morph(전환 소요시간) + hold(한 단어가 완전히 보이는 유지시간).
+const MORPH_DURATION = 1;
+const MORPH_HOLD = 1.2;
+const MORPH_WORD_COUNT = 2;
+const MORPH_SLOT = MORPH_DURATION + MORPH_HOLD;
+const MORPH_CYCLE = MORPH_SLOT * MORPH_WORD_COUNT;
+// LabMoa → IN DAEJEON → LabMoa, 정확히 한 바퀴 돈 뒤 LabMoa가 완전히 보이는
+// 시점(morph 완료 + hold 완료)에 정적 텍스트로 전환해 무한 루프를 끊는다.
+const MORPH_SETTLE_MS = (MORPH_CYCLE + MORPH_DURATION + MORPH_HOLD) * 1000;
 
-/** prefers-reduced-motion 여부 — globe의 자동회전(speed)을 0으로 눌러 정지시키는 데 쓴다.
- * 드래그 회전은 사용자가 직접 조작하는 인터랙션이라 reduced-motion과 무관하게 그대로 둔다. */
+/** prefers-reduced-motion 여부 — 이 경우 모핑 애니메이션을 아예 건너뛰고 처음부터
+ * 정적 "LabMoa"를 보여준다. */
 function useReducedMotion(): boolean {
   const [reduced, setReduced] = React.useState(false);
 
@@ -55,9 +71,27 @@ function useReducedMotion(): boolean {
   return reduced;
 }
 
-export function WordGlobeHero({ stats }: WordGlobeHeroProps) {
-  const [labStat, paperStat] = stats;
+export function WordGlobeHero() {
   const reducedMotion = useReducedMotion();
+  const [morphSettled, setMorphSettled] = React.useState(false);
+  // replayToken을 바꾸면 아래 effect가 다시 돌면서 정착 상태를 풀고 새 타이머를 건다.
+  // TextMorph에도 이 값을 key로 줘서 강제 재마운트시켜야 내부 CSS 애니메이션(useId 기반
+  // keyframe 이름 포함)이 처음부터 다시 재생된다.
+  const [replayToken, setReplayToken] = React.useState(0);
+
+  React.useEffect(() => {
+    if (reducedMotion) {
+      setMorphSettled(true);
+      return;
+    }
+    setMorphSettled(false);
+    const timer = setTimeout(() => setMorphSettled(true), MORPH_SETTLE_MS);
+    return () => clearTimeout(timer);
+  }, [reducedMotion, replayToken]);
+
+  const handleReplay = reducedMotion
+    ? undefined
+    : () => setReplayToken((token) => token + 1);
 
   return (
     <div className="h09-hero-shell">
@@ -75,72 +109,44 @@ export function WordGlobeHero({ stats }: WordGlobeHeroProps) {
       <div className="h09-content-rails" aria-hidden="true" />
       <div className="h09-wave-pattern" aria-hidden="true" />
 
-      <div className="h09-globe-stage">
-        <Globe
-          fill="dots"
-          dots={GLOBE_DOTS}
-          oceanColor="#1B3A6B"
-          outlineColor="#0B5FFF"
-          showOutline
-          outlineWidth={1}
-          graticuleColor="rgba(255, 255, 255, 0.18)"
-          showGrid
-          markerConfig={GLOBE_MARKERS}
-          initialLatitude={30}
-          initialLongitude={127}
-          speed={reducedMotion ? 0 : 2}
-          direction="left"
-          smoothing={8}
-          dragSpeed={5}
-          stopOnHover
-          scale={8}
-          detail={6}
-          style={{ width: "100%", height: "100%" }}
-        />
+      <div className="h09-globe-stage h09-morph-stage">
+        {morphSettled ? (
+          <h1
+            className={`h09-morph-settled ${pretendardBold.className}`}
+            onClick={handleReplay}
+            role={handleReplay ? "button" : undefined}
+            tabIndex={handleReplay ? 0 : undefined}
+            onKeyDown={
+              handleReplay
+                ? (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleReplay();
+                    }
+                  }
+                : undefined
+            }
+            aria-label={handleReplay ? "LabMoa — 클릭하면 애니메이션 다시 재생" : undefined}
+            style={{ cursor: handleReplay ? "pointer" : "default" }}
+          >
+            LabMoa
+          </h1>
+        ) : (
+          <TextMorph
+            key={replayToken}
+            words={MORPH_WORDS}
+            color={MORPH_COLOR}
+            font={{ fontFamily: pretendardBold.style.fontFamily, fontWeight: 700 }}
+            transition={{
+              type: "tween",
+              duration: MORPH_DURATION,
+              delay: MORPH_HOLD,
+              ease: "easeInOut",
+            }}
+            tag="h1"
+          />
+        )}
       </div>
-
-      <section className="h09-hero-content">
-        <FadeUp className="h09-headline-block" delay={0}>
-          <div className="h09-headline-copy">
-            <h1>
-              고등학생의 연구를,
-              <br />
-              현실로 만듭니다
-            </h1>
-          </div>
-          <div className="h09-actions" id="get-started">
-            <Link className="h09-button h09-button-dark" href="/search">
-              연구실 찾기
-            </Link>
-            <Link className="h09-button h09-button-light" href="/signup">
-              회원가입
-            </Link>
-          </div>
-        </FadeUp>
-
-        <FadeUp className="h09-details-block" delay={DURATION.base}>
-          <p>
-            대전의 실제 연구실과 연구자가 고등학생의 연구 아이디어를 검증하고
-            실현시켜주는 플랫폼입니다.
-          </p>
-          <div className="h09-stats">
-            <div>
-              <strong>
-                {labStat?.value ?? 0}
-                {labStat?.suffix ?? ""}
-              </strong>
-              <span>{labStat?.label ?? "연계 연구실"}</span>
-            </div>
-            <div>
-              <strong>
-                {paperStat?.value ?? 0}
-                {paperStat?.suffix ?? ""}
-              </strong>
-              <span>{paperStat?.label ?? "수집 논문"}</span>
-            </div>
-          </div>
-        </FadeUp>
-      </section>
     </div>
   );
 }
