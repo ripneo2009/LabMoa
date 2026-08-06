@@ -9,8 +9,8 @@
     "lint": "eslint",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
-    "firebase:seed": "tsx scripts/seed-firestore.ts",
-    "firebase:migrate": "tsx scripts/migrate-prisma-to-firestore.ts"
+    "firebase:seed": "tsx --env-file=.env.local scripts/seed-firestore.ts",
+    "firebase:migrate": "tsx --env-file=.env.local scripts/migrate-prisma-to-firestore.ts"
   },
   "dependencies": {
     "@google/genai": "^2.16.0",
